@@ -1,5 +1,7 @@
 import json
 import re
+import argparse
+
 from google.cloud import bigquery
 from panda_gui_viewer import show_history
 from service.bigquery_service import get_destination_table
@@ -154,9 +156,17 @@ def process_and_execute(input_string):
         'query_tree': query_tree
     }
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Debug a BigQuery query.")
+    parser.add_argument("input", help="Path to the SQL file")
+    parser.add_argument("--limit", type=int, default=1000, help="Limit the number of rows for showing each query at the end (default: 1000)")
+    return parser.parse_args()
+
 if __name__ == '__main__':
 
-    with open('simple_query.sql') as f:
+    args = parse_args()
+
+    with open(args.input) as f:
         input_string = f.read()
     
     result = process_and_execute(input_string)
@@ -167,6 +177,6 @@ if __name__ == '__main__':
     save_graph(result['graph'],generate_result_file_path('tree_graph', 'png')) 
 
 
-    show_history(result['result_history_stack'])
+    show_history(result['result_history_stack'], args.limit)
 
 

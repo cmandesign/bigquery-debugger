@@ -11,13 +11,47 @@ BigDebug is an open-source tool designed to help people debug large BigQuery que
 ## Features
 
 - Step-by-step inspection of subqueries and temporary tables.
-- Intuitive and user-friendly GUI for easy navigation.
+- User-friendly GUI for easy navigation.
 - Support for analyzing complex nested queries.
 - Detailed query execution information and statistics.
 - Query optimization suggestions.
 - Result saving and importing for offline inspection.
 - Query tree visualization for query dependency and execution order.
 
+## How to run ?
+
+### Executable
+Soon - WIP
+
+### Run via Source
+
+First you need Python 3.8 or higher . [Download Python](https://www.python.org/downloads/)
+Then you can run following commands to run the project 
+
+```
+# Make sure your python is 3.8+
+python3 --version
+
+python3 -m venv venv 
+
+pip install -r requirements.txt
+
+```
+
+Run the GUI
+
+```
+python gui.py
+```
+
+Run the CLI
+```
+python main.py input_sql_file.sql
+
+# Or
+
+python main.py input_sql_file.sql --limit 20000
+```
 ## How to Contribute
 
 We welcome contributions from the community! If you want to contribute to BigDebug, you can fork and create pull request to main branch.
