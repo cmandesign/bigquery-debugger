@@ -1,5 +1,13 @@
 # BigDebug (BigQuery Debugger Tool)
 
+    ____  _       ____       __               
+   / __ )(_)___ _/ __ \___  / /_  __  ______ _
+  / __  / / __ `/ / / / _ \/ __ \/ / / / __ `/
+ / /_/ / / /_/ / /_/ /  __/ /_/ / /_/ / /_/ / 
+/_____/_/\__, /_____/\___/_.___/\__,_/\__, /  
+        /____/                       /____/   
+
+
 ## Description
 
 BigDebug is an open-source tool designed to help people debug large BigQuery queries effectively. It provides a user-friendly GUI that allows users to inspect the results of subqueries and temporary tables step by step, making the debugging process more efficient and intuitive. Additionally, BigDebug supports saving query results, enabling users to import and inspect previous results without re-running expensive queries. The tool also generates a query tree to visualize the dependency and order of running queries, making it easier to understand complex query structures.
