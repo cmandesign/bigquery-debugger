@@ -1,8 +1,7 @@
+import os
+import sys
 import json
 import logging
-import multiprocessing
-import os
-import subprocess
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import scrolledtext
@@ -10,18 +9,16 @@ from tkinter import filedialog
 from tkinter import ttk
 
 from main import get_logger, process_and_execute
-from panda_gui_viewer import show_history
-
-from service.bigquery_service import get_destination_table
 
 from model.Node import Node
-from service.graph_service import generate_graph, save_graph
-from service.utils import find_and_replace_not_partially, generate_result_file_path
-# os.environ['APPDATA'] = ""
+from service.graph_service import save_graph
+from service.utils import  generate_result_file_path
 import pandas as pd
-from pandasgui import show
 from typing_extensions import Literal
 
+from tree_view import open_new_window
+
+bundle_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
 
 result = {}
 input_string = None
@@ -53,17 +50,7 @@ class ScrolledTextBoxHandler(logging.Handler):
             self.text_widget.insert(tk.END, msg)
         self.text_widget.see(tk.END)  # Scroll to the end of the text
 
-
-# class ScrolledTextBoxHandler(logging.Handler):
-#     def __init__(self, textbox):
-#         super().__init__()
-#         self.textbox = textbox
-
-#     def emit(self, record):
-#         log_message = self.format(record) + "\n"
-#         self.textbox.insert(tk.END, log_message)
-#         self.textbox.see(tk.END)  # Scroll to the end of the text
-        
+       
 
 def on_save_file():
     logger.info("Saving the file...\n")
@@ -108,21 +95,24 @@ def on_import_results_btn():
         history_file_path = file_path
         table_viewer_btn.config(state=tk.NORMAL)
 
-
 def on_table_viewer_btn():
+    open_new_window(root, history_file_path)
 
-    logger.info(f"History Viewer Opening + Running History Query (History should not be older than 24 hours due to temp table deletion policy from BigQuery)")
+# def on_table_viewer_btn():
+
+#     logger.info(f"History Viewer Opening + Running History Query (History should not be older than 24 hours due to temp table deletion policy from BigQuery)")
     
-    # show_history(result['result_history_stack'])
-    command = ["python", "panda_gui_viewer.py", history_file_path]
-    try:
-        subprocess.run(command, check=True) # it will wait until we close the viewer
-        # subprocess.Popen(command) 
-    except subprocess.CalledProcessError as e:
-        print(f"Error occurred while running the script: {e}")
+#     # show_history(result['result_history_stack'])
+#     command = ["python", "panda_gui_viewer.py", history_file_path]
+#     try:
+#         subprocess.run(command, check=True) # it will wait until we close the viewer
+#         # subprocess.Popen(command) 
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error occurred while running the script: {e}")
 
 def print_splash():
-    with open(".splash") as f:
+    path_to_splash = os.path.abspath(os.path.join(bundle_dir, '.splash'))
+    with open(path_to_splash) as f:
         splash_string = f.read()
         log.insert(tk.END, splash_string, "system")
 

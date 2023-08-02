@@ -3,7 +3,6 @@ import re
 import argparse
 
 from google.cloud import bigquery
-from panda_gui_viewer import show_history
 from service.bigquery_service import get_destination_table
 
 from model.Node import Node
