@@ -6,6 +6,8 @@ import os
 from google.cloud import bigquery
 import pandas as pd
 
+from service.bigquery_service import authenticate_bigquery
+
 # Sample data (Replace this with your own data)
 data = {}
 
@@ -14,7 +16,7 @@ original_dataframes = {}
 
 
 
-def open_new_window(root, input):
+def open_new_window(input, limit=1000):
     def on_list_item_select(event):
         selected_item = list_box.get(list_box.curselection())
         if selected_item:
@@ -48,7 +50,9 @@ def open_new_window(root, input):
             return get_dataframe_result(result_history_stack, limit)
 
     def get_dataframe_result(result_history_stack, limit=1000):
-        client = bigquery.Client()
+        credentials, project_id = authenticate_bigquery()
+
+        client = bigquery.Client(credentials=credentials, project=project_id, location="EU")
 
         dataframe_result_dict = {}
         for i, (name, result_table) in enumerate(result_history_stack):
@@ -74,7 +78,7 @@ def open_new_window(root, input):
             table.insert("", tk.END, values=tuple(row.values))
 
 
-    data = show_history_from_file(input)
+    data = show_history_from_file(input, limit)
     # Create the main application window
     query_inspector_window = tk.Tk()
     query_inspector_window.title("List and Table Viewer")
