@@ -1,34 +1,46 @@
 import json
+import os
 import re
 import argparse
+import sys
+import configparser
 
 from google.cloud import bigquery
-from panda_gui_viewer import show_history
-from service.bigquery_service import get_destination_table
+from service.bigquery_service import authenticate_bigquery, get_destination_table
 
 from model.Node import Node
 from service.graph_service import generate_graph, save_graph
 from service.utils import find_and_replace_not_partially, generate_result_file_path
+from google.cloud import bigquery
+from service.logging_service import get_logger
+from tree_view import open_new_window
 
-import logging
 
-# Create a file logger that writes log messages to a file
-file_logger = logging.getLogger("file_logger")
-file_handler = logging.FileHandler("logfile.log")
-file_format = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-file_handler.setFormatter(file_format)
-file_logger.addHandler(file_handler)
-file_logger.setLevel(logging.DEBUG)
+home_path = os.path.expanduser('~')
+bundle_dir = getattr(sys, '_MEIPASS', os.path.abspath(os.path.dirname(__file__)))
 
-def get_logger():
-    return file_logger
+file_logger = get_logger()
 
 # Globals 
 
 executed_named_queries = {}
 result_stack = []
 replaced_nodes = []
- 
+
+
+def extract_substring_from_stop_word(text, stop_words):
+    start_position = None
+    for word in stop_words:
+        index = text.rfind(word)
+        if index != -1:
+            start_position = index + len(word)
+            break
+
+    if start_position is None:
+        start_position = 0
+
+    return text[start_position:]
+
 def build_tree_from_string(input_string):
     stack = []
     root = Node("root", input_string)
@@ -50,10 +62,15 @@ def build_tree_from_string(input_string):
 
                 if parantheses_content.lower().find('select') >= 0:
                     root.query = parantheses_content
-                    pattern = r"(?<=\s)(\w+)(?=\sas\s)(?![^(]*[\(\)])"
-                    file_logger.debug("""==========================\nFinding Named Query\nMatching name in :""" + input_string[0:start_index]
+                    pattern = r"(?<=\s)(\w+)(?=\s+as\s+\()"
+
+                    stop_words = ["SELECT", "FROM"]
+
+                    searching_area_for_name_of_query = extract_substring_from_stop_word(input_string[0:start_index+1], stop_words)
+                    
+                    file_logger.debug("""==========================\nFinding Named Query\nMatching name in :""" + searching_area_for_name_of_query
                     )
-                    matches = re.findall(pattern, input_string[0:start_index], re.IGNORECASE | re.MULTILINE)
+                    matches = re.findall(pattern, searching_area_for_name_of_query, re.IGNORECASE | re.MULTILINE)
                     if matches:
                         name = matches[-1].strip()
                         file_logger.debug("Found Name Result: " + name)
@@ -126,6 +143,10 @@ def execute_postorder(client, node):
 
     query = prepare_query_replace_placeholders(node)
     
+    job_config = bigquery.QueryJobConfig(
+        allow_large_results=True
+    )
+
     query_job = client.query(query)
     results = query_job.result() # wait until finish
     
@@ -146,7 +167,9 @@ def process_and_execute(input_string):
     # Generate the graph and save it as an image file
     graph = generate_graph(query_tree)
 
-    client = bigquery.Client()
+    credentials, project_id = authenticate_bigquery()
+
+    client = bigquery.Client(credentials=credentials, project=project_id, location="EU")
 
     result_history_stack = execute_postorder(client, query_tree)
     
@@ -171,12 +194,13 @@ if __name__ == '__main__':
     
     result = process_and_execute(input_string)
 
-    with open(generate_result_file_path('result_stack', 'json'), mode="wt") as f:
+    result_history_path = generate_result_file_path('result_stack', 'json')
+    with open(result_history_path, mode="wt") as f:
         f.write(json.dumps(result['result_history_stack']))
 
     save_graph(result['graph'],generate_result_file_path('tree_graph', 'png')) 
 
 
-    show_history(result['result_history_stack'], args.limit)
+    open_new_window(result_history_path, args.limit)
 
 
