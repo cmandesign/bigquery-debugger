@@ -37,7 +37,12 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='AppIcon.icns'
+
 )
+
+
+
 coll = COLLECT(
     exe,
     a.binaries,
@@ -52,9 +57,18 @@ app = BUNDLE(
     coll,
     name='BigDebug.app',
     icon='AppIcon.icns',
-    bundle_identifier='com.bigdebug',
+    bundle_identifier='com.cmandesign.bigdebug',
          info_plist={
             'NSPrincipalClass': 'NSApplication',
-            'NSAppleScriptEnabled': False
+            'NSAppleScriptEnabled': False,
+            'LSBackgroundOnly': False,
+            'NSRequiresAquaSystemAppearance': 'No',
+            'CFBundlePackageType': 'APPL',
+            'CFBundleSupportedPlatforms': ['MacOSX'],
+            'CFBundleIdentifier': 'com.cmandesign.bigdebug',
+            'CFBundleVersion': '0.0.1',
+            'LSMinimumSystemVersion': '10.15',
+            'LSApplicationCategoryType': 'public.app-category.utilities',
+            'ITSAppUsesNonExemptEncryption': False
             },
 )
