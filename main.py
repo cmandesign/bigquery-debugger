@@ -3,7 +3,6 @@ import os
 import re
 import argparse
 import sys
-import configparser
 
 from google.cloud import bigquery
 from service.bigquery_service import authenticate_bigquery, get_destination_table
@@ -118,10 +117,10 @@ def prepare_query_replace_placeholders(node):
 
     query = node.query 
     for child in node.children:
-        query = query.replace("{" + child.name + "}", "( select * from {} )".format(child.destination_table))
+        query = query.replace("{" + child.name + "}", "( select * from `{}` )".format(child.destination_table))
 
     for named_query, result_table in executed_named_queries.items():
-        query = query.replace("{" + named_query + "}", "( select * from {} )".format(result_table))
+        query = query.replace("{" + named_query + "}", "( select * from `{}` )".format(result_table))
 
     file_logger.debug("""=========================
 Node Name: {}
@@ -135,7 +134,7 @@ def add_to_named_query(node):
     if node.name:
         executed_named_queries[node.name] = node.destination_table
     
-def execute_postorder(client, node):
+def execute_postorder(client, node, dry_run=False):
     if node is None:
         return
     for child in node.children:
@@ -146,13 +145,16 @@ def execute_postorder(client, node):
     job_config = bigquery.QueryJobConfig(
         allow_large_results=True
     )
-
-    query_job = client.query(query)
-    results = query_job.result() # wait until finish
+    if not dry_run:
+        query_job = client.query(query)
+        results = query_job.result() # wait until finish
     
+        destination_table = query_job.configuration._get_sub_prop('destinationTable')
+        node.set_destination_table(destination_table)
 
-    destination_table = query_job.configuration._get_sub_prop('destinationTable')
-    node.set_destination_table(destination_table)
+    else:
+        node.destination_table = node.name
+        
     result_stack.append([node.name, node.destination_table])
 
     add_to_named_query(node)
@@ -161,8 +163,18 @@ def execute_postorder(client, node):
     return result_stack
 
 
+def remove_comments(query):
+    # Remove single-line comments starting with "--"
+    query = re.sub(r'--.*\n', '\n', query)
+    
+    # Remove multi-line comments enclosed in "/* */"
+    query = re.sub(r'/\*.*?\*/', '', query, flags=re.DOTALL)
+    
+    return query
+
 def process_and_execute(input_string):
-    query_tree = build_tree_from_string(input_string)
+    comments_removed_string = remove_comments(input_string)
+    query_tree = build_tree_from_string(comments_removed_string)
 
     # Generate the graph and save it as an image file
     graph = generate_graph(query_tree)
@@ -170,6 +182,7 @@ def process_and_execute(input_string):
     credentials, project_id = authenticate_bigquery()
 
     client = bigquery.Client(credentials=credentials, project=project_id, location="EU")
+    # client = bigquery.Client(credentials=credentials, project=project_id)
 
     result_history_stack = execute_postorder(client, query_tree)
     
@@ -198,9 +211,10 @@ if __name__ == '__main__':
     with open(result_history_path, mode="wt") as f:
         f.write(json.dumps(result['result_history_stack']))
 
-    save_graph(result['graph'],generate_result_file_path('tree_graph', 'png')) 
+    print("Result stack stored " + result_history_path)
+    # save_graph(result['graph'],generate_result_file_path('tree_graph', 'png')) 
 
 
-    open_new_window(result_history_path, args.limit)
+    # open_new_window(result_history_path, args.limit)
 
 
