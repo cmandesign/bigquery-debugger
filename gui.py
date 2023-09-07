@@ -32,7 +32,8 @@ query_tree_path = None
 def report_callback_exception(self, exc, val, tb):
     # showerror("Error", message=str(val))
     # error_message = f"Uncaught exception: {exc_type.__name__}: {exc_value}"
-    logger.error(str(val))
+    # raise exc
+    logger.error(str(exc))
 
 tk.Tk.report_callback_exception = report_callback_exception
 
