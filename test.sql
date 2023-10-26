@@ -1,0 +1,1 @@
+SELECT * FROM `bigquery-public-data.country_codes.country_codes` 
