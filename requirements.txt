@@ -1,6 +1,0 @@
-db-dtypes==1.1.1
-google-cloud-bigquery==3.11.4
-graphviz==0.20.1
-pandas==2.0.3
-pandasgui==0.2.14
-pydot==1.4.2
